@@ -2,3 +2,4 @@
 /logs
 /data
 /.python-version
+.env.example
