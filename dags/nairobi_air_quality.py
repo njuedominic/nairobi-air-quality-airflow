@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
-from airflow.sdk import dag, task   
+from airflow.sdk import dag, task  
+from airflow.sdk.bases.hook import BaseHook 
+from nairobi_air_quality_airflow.api.openaq_client import OpenAQClient
+
 
 @dag(
     dag_id="nairobi_air_quality",
@@ -18,8 +21,29 @@ def nairobi_air_quality_pipeline():
     def extract_locations():
         ''''
         Extracts the list of locations in Nairobi for which air quality data is available.'''
-        # Placeholder for actual extraction logic
-        return[]
+        connection = BaseHook.get_connection("openaq_api")
+        api_key = connection.extra_dejson.get("api_key")
+
+        client = OpenAQClient(
+            api_key=api_key,
+            host=connection.host,
+            )
+        locations = client.get_locations()
+
+        simplified_locations = [
+            {
+                "location_id": loc.get("id"),
+                "name": loc.get("name"),
+            }
+            for loc in locations
+        ]
+
+        print(f"Extracted {len(simplified_locations)} locations.")
+        
+        return simplified_locations
+
+
+    
     @task
     def extract_sensors(locations):
         '''
@@ -52,4 +76,4 @@ def nairobi_air_quality_pipeline():
     validated_measurements = validate_measurements(measurements)
     load_to_database(validated_measurements)
 
-    nairobi_air_quality_pipeline()
+nairobi_air_quality_pipeline()
