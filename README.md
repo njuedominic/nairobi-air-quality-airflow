@@ -13,3 +13,5 @@ CREATE TABLE IF NOT EXISTS raw_air_quality (
     -- The composite primary key prevents duplicate entries on pipeline reruns
     PRIMARY KEY (sensor_id, measurement_timestamp)
 ); -->
+
+
