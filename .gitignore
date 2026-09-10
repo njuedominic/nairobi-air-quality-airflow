@@ -3,3 +3,4 @@
 /data
 /.python-version
 .env.example
+__pycache__/
