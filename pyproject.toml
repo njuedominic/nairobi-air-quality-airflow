@@ -8,17 +8,11 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "apache-airflow",
+    "apache-airflow==3.3.1",
     "apache-airflow-providers-postgres",
     "requests",
     "psycopg[binary]",
 ]
-dev = [
-    "pytest",
-    "ruff",
-]
-[project.scripts]
-nairobi-air-quality-airflow = "nairobi_air_quality_airflow:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
