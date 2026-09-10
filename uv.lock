@@ -1314,7 +1314,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "apache-airflow" },
+    { name = "apache-airflow", specifier = "==3.3.1" },
     { name = "apache-airflow-providers-postgres" },
     { name = "psycopg", extras = ["binary"] },
     { name = "requests" },
