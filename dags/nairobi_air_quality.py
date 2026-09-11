@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from airflow import sensors
 from airflow.sdk import dag, task  
 from airflow.sdk.bases.hook import BaseHook 
 from nairobi_air_quality_airflow.api.openaq_client import OpenAQClient
@@ -80,40 +81,89 @@ def nairobi_air_quality_pipeline():
         
         return normalized_sensors
 
+    @task
+    def flatten_sensors(sensors_groups: list[list[dict]]) -> list[dict]:
+        """
+        Flattens a list of lists of sensors into a single list of sensors.
+        """
+        flattened = [
+            sensor
+            for group in sensors_groups
+            for sensor in group]
+        print(f"Flattened to {len(flattened)} sensors.")
+        return flattened
 
 
+    @task
+    def extract_measurements(sensor: dict) -> list[dict]:
+        """
+        Extracts the air quality measurements from each sensor.
+        """
+        connection = BaseHook.get_connection("openaq_api")
+        api_key = connection.extra_dejson.get("api_key")
+    
+        client = OpenAQClient(
+            api_key=api_key,
+            host=connection.host,
+        )
+        measurements = client.get_measurements(
+            sensor_id=sensor["sensor_id"],
+            limit=100,
+        )
+
+        normalized_measurements = [
+            {
+                "location_id": sensor["location_id"],
+                "location_name": sensor["location_name"],
+                "sensor_id": sensor["sensor_id"],
+                "parameter": sensor["parameter"],
+                "unit": sensor["unit"],
+                "value": measurement["value"],
+                "measurement_timestamp": measurement["period"]["datetimeFrom"]["utc"],
+            }
+            for measurement in measurements
+        ]
+
+        print(
+            f"Sensor {sensor['sensor_id']} "
+            f"({sensor['parameter']}) returned "
+            f"{len(measurements)} measurements."
+        )
+    
+        return normalized_measurements
+
+
+    locations = extract_locations()
+    sensor_group = extract_sensors.expand(
+    location=locations
+    )
+    sensors = flatten_sensors(sensor_group)
+    measurement_groups = extract_measurements.expand(
+    sensor=sensors
+    )
 
 
 
 
     
-    # @task
-    # def extract_measurements(sensors):
-    #     '''
-    #     Extracts the air quality measurements from each sensor.'''
-    #     # Placeholder for actual extraction logic
-    #     return[]
-    # @task
-    # def validate_measurements(measurements):
-    #     '''
-    #     Validates the extracted air quality measurements.'''
-    #     # Placeholder for actual validation logic
-    #     return[]
-    # @task
-    # def load_to_database(validated_measurements):
-    #     '''
-    #     Loads the validated air quality measurements into the database.'''
-    #     print(f"Loading {len(validated_measurements)} records into the database.")
-    #     # Placeholder for actual loading logic
-    #     return "Data loaded successfully"
+#-------------------------------------------------------------------------
+        # def validate_measurements(measurements):
+        #     '''
+        #     Validates the extracted air quality measurements.'''
+        #     # Placeholder for actual validation logic
+        #     return[]
+        # @task
+        # def load_to_database(validated_measurements):
+        #     '''
+        #     Loads the validated air quality measurements into the database.'''
+        #     print(f"Loading {len(validated_measurements)} records into the database.")
+        #     # Placeholder for actual loading logic
+        #     return "Data loaded successfully"
+    
 
-    locations = extract_locations()
-    sensors =extract_sensors.expand(location=locations)
     # measurements = extract_measurements(sensors)
     # validated_measurements = validate_measurements(measurements)
     # load_to_database(validated_measurements)
-
-
 
 
 
