@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
-from airflow import sensors
+from airflow import logging, sensors
 from airflow.sdk import dag, task
 from airflow.sdk.bases.hook import BaseHook
 from nairobi_air_quality_airflow.api.openaq_client import OpenAQClient
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
 @dag(
@@ -18,6 +19,11 @@ from nairobi_air_quality_airflow.api.openaq_client import OpenAQClient
     tags=["air_quality", "nairobi"],
 )
 def nairobi_air_quality_pipeline():
+
+    # ===============================================================================
+    # TASK  -- extract_locations
+    # ===============================================================================
+
     @task
     def extract_locations():
         """
@@ -44,7 +50,9 @@ def nairobi_air_quality_pipeline():
 
         return simplified_locations
 
-    # ---------Extract Sensors Task---------
+    # ===============================================================================
+    # TASK -- extract_sensors  (DYNAMICALLY MAPPED, one instance per location)
+    # ===============================================================================
 
     @task
     def extract_sensors(location: dict) -> list[dict]:
@@ -85,6 +93,9 @@ def nairobi_air_quality_pipeline():
         print(f"Flattened to {len(flattened)} sensors.")
         return flattened
 
+    # ===============================================================================
+    # TASK -- extract_measurements  (DYNAMICALLY MAPPED, one instance per sensor)
+    # ===============================================================================
     @task(
         max_active_tis_per_dag=5,
     )
@@ -138,6 +149,10 @@ def nairobi_air_quality_pipeline():
         ]
         print(f"Flattened to {len(flattened)} measurements.")
         return flattened
+
+    # ===============================================================================
+    # TASK  -- validate_measurements
+    # ===============================================================================
 
     @task
     def validate_measurements(
@@ -198,13 +213,87 @@ def nairobi_air_quality_pipeline():
 
         return valid_measurements
 
+    # ===============================================================================
+    # TASK 6 -- load_to_postgres
+    # ===============================================================================
+    @task
+    def load_measurements(measurements: list[dict]) -> None:
+        """
+        Idempotent bulk upsert into the warehouse, via a Postgres HOOK.
+
+        """
+        if not measurements:
+            print("No measurements to load.")
+            return
+
+        postgres_hook = PostgresHook(postgres_conn_id="postgres_default")
+
+        sql = """
+        INSERT INTO air_quality_measurements (
+            location_id,
+            location_name,
+            sensor_id,
+            parameter,
+            unit,
+            value,
+            measurement_timestamp
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (
+            sensor_id,
+            parameter,
+            measurement_timestamp
+        )
+        DO UPDATE SET
+            location_id = EXCLUDED.location_id,
+            location_name = EXCLUDED.location_name,
+            unit = EXCLUDED.unit,
+            value = EXCLUDED.value,
+            updated_at = NOW();
+        """
+
+        rows = [
+            (
+                measurement["location_id"],
+                measurement["location_name"],
+                measurement["sensor_id"],
+                measurement["parameter"],
+                measurement["unit"],
+                measurement["value"],
+                measurement["measurement_timestamp"],
+            )
+            for measurement in measurements
+        ]
+
+        conn = postgres_hook.get_conn()
+        cursor = conn.cursor()
+
+        try:
+            cursor.executemany(sql, rows)
+            conn.commit()
+
+            print(f"Loaded/upserted {len(rows)} measurements.")
+
+        except Exception:
+            conn.rollback()
+            logging.exception("Failed to load measurements.")
+            raise
+
+        finally:
+            cursor.close()
+            conn.close()
+
+        print(f"Loading {len(measurements)} measurements into the database.")
+
+    # ------------------------------------
+
     locations = extract_locations()
     sensor_group = extract_sensors.expand(location=locations)
     sensors = flatten_sensors(sensor_group)
     measurement_groups = extract_measurements.expand(sensor=sensors)
     measurements = flatten_measurements(measurement_groups)
-
     validated_measurements = validate_measurements(measurements)
+    load_measurements(validated_measurements)
 
 
 nairobi_air_quality_pipeline()
