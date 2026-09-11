@@ -94,7 +94,9 @@ def nairobi_air_quality_pipeline():
         return flattened
 
 
-    @task
+    @task(
+            max_active_tis_per_dag=5,
+    )
     def extract_measurements(sensor: dict) -> list[dict]:
         """
         Extracts the air quality measurements from each sensor.
@@ -132,6 +134,22 @@ def nairobi_air_quality_pipeline():
     
         return normalized_measurements
 
+    @task
+    def flatten_measurements(
+        measurements_groups; list[list[dict]],
+    )-> list[dict]:
+        """
+        Flattens a list of lists of measurements into a single list of measurements.
+        
+        """
+        flattened = [
+            measurement
+            for group in measurements_groups
+            for measurement in group
+        ]
+        print(f"Flattened to {len(flattened)} measurements.")
+        return flattened
+
 
     locations = extract_locations()
     sensor_group = extract_sensors.expand(
@@ -141,11 +159,8 @@ def nairobi_air_quality_pipeline():
     measurement_groups = extract_measurements.expand(
     sensor=sensors
     )
+    measurements = flatten_measurements(measurement_groups)
 
-
-
-
-    
 #-------------------------------------------------------------------------
         # def validate_measurements(measurements):
         #     '''
