@@ -80,6 +80,8 @@ Before running the project locally, ensure you have:
 
 ## Local Setup
 
+### Option 1: Native Python Environment
+
 1. Clone the repository.
 2. Install dependencies:
 
@@ -93,6 +95,43 @@ uv sync --group dev
 - `postgres_default` for your Postgres database
 
 4. Create the target warehouse table using the schema in [sql/create_tables.sql](sql/create_tables.sql).
+
+### Option 2: Docker Compose
+
+This project includes a containerized Airflow stack using Docker Compose.
+
+1. Copy the sample environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Update the values in `.env` as needed.
+3. Start the stack:
+
+```bash
+docker compose up --build
+```
+
+4. Open the Airflow UI in your browser:
+
+```text
+http://localhost:8080
+```
+
+5. Log in with the default admin credentials created by the stack:
+
+- Username: `admin`
+- Password: `admin`
+
+The Docker stack includes:
+
+- Postgres database
+- Airflow webserver
+- Airflow scheduler
+- Mounted DAG and source directories for local development
+
+> Docker is the recommended option for quickly running the full pipeline in a reproducible environment.
 
 ## Running the DAG
 
