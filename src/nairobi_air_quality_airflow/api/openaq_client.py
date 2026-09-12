@@ -72,13 +72,17 @@ class OpenAQClient:
     def get_measurements(
             self,
             sensor_id: int,
-            limit: int = 100,
+            datetime_from: str,
+            datetime_to: str,
+            limit: int = 1000,
     )-> list[dict]:
 
         response = self.session.get(
             f"{self.base_url}/sensors/{sensor_id}/measurements",
             params={
                 "limit": limit,
+                "datetime_from": datetime_from,
+                "datetime_to": datetime_to,
             },
             timeout=30,
         )

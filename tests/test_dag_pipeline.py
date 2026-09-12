@@ -30,3 +30,5 @@ def test_dag_builds_pipeline_structure():
     assert "flatten_measurements" in task_ids
     assert "validate_measurements" in task_ids
     assert "load_measurements" in task_ids
+    assert "refresh_marts" in task_ids
+    assert "upsert_dimensions" in task_ids
