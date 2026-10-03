@@ -23,13 +23,7 @@ app.add_middleware(
 )
 
 def get_connection():
-    return psycopg.connect(
-        host=os.getenv("WAREHOUSE_HOST", "localhost"),
-        port=int(os.getenv("WAREHOUSE_PORT", "5432")),
-        dbname=os.getenv("WAREHOUSE_DB", "air_quality"),
-        user=os.getenv("WAREHOUSE_USER"),
-        password=os.getenv("WAREHOUSE_PASSWORD"),
-    )
+    return psycopg.connect(os.getenv("DATABASE_URL"))
 
 
 @app.get("/config")
