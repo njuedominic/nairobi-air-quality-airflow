@@ -17,6 +17,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:3000",
         "https://nairobi-air-quality-airflow.onrender.com",
+        "https://nairobi-air-quality-map.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["GET"],
