@@ -3,3 +3,4 @@
 /data
 /.python-version
 __pycache__/
+/air_quality.dump
