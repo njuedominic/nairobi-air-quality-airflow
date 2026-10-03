@@ -1302,8 +1302,11 @@ source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-postgres" },
+    { name = "fastapi" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "python-dotenv" },
     { name = "requests" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -1316,8 +1319,11 @@ dev = [
 requires-dist = [
     { name = "apache-airflow", specifier = "==3.3.1" },
     { name = "apache-airflow-providers-postgres" },
+    { name = "fastapi", specifier = ">=0.136.3" },
     { name = "psycopg", extras = ["binary"] },
+    { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "requests" },
+    { name = "uvicorn", specifier = ">=0.52.4" },
 ]
 
 [package.metadata.requires-dev]

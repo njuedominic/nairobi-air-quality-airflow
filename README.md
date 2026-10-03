@@ -133,6 +133,19 @@ The Docker stack includes:
 
 > Docker is the recommended option for quickly running the full pipeline in a reproducible environment.
 
+## Dashboard
+
+Set `MAPBOX_ACCESS_TOKEN` in the root `.env` file. The API loads the value and exposes it to the browser through `/config`; Mapbox browser tokens are public, so restrict the token to this site's allowed URLs in Mapbox.
+
+Start the API and frontend in separate terminals:
+
+```bash
+uv run uvicorn nairobi_air_quality_airflow.api.service:app --reload --port 8000
+python -m http.server 3000 --directory frontend
+```
+
+Open `http://localhost:3000` to view the dashboard.
+
 ## Running the DAG
 
 From the project root, initialize and start Airflow as needed for your environment, then trigger the DAG named `nairobi_air_quality`.
