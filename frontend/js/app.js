@@ -1,4 +1,9 @@
-const API_BASE_URL = window.API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? "http://127.0.0.1:8000"
+        : "https://YOUR-FASTAPI-SERVICE.onrender.com";
+        
 const mapElement = document.getElementById("map");
 let runtimeConfig;
 
