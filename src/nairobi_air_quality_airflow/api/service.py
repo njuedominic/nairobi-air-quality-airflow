@@ -16,6 +16,7 @@ app.add_middleware(
     allow_origins=[
         "http://127.0.0.1:3000",
         "http://localhost:3000",
+        "https://nairobi-air-quality-airflow.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["GET"],
@@ -127,3 +128,4 @@ def air_quality(
             status_code=500,
             detail=f"Failed to fetch air quality data: {exc}",
         ) from exc
+    
