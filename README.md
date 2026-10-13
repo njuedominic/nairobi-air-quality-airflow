@@ -23,6 +23,23 @@ The pipeline is implemented in [dags/nairobi_air_quality.py](dags/nairobi_air_qu
 - Database schema: [sql/create_tables.sql](sql/create_tables.sql)
 - Tests: [tests](tests)
 
+```mermaid
+flowchart LR
+    A[OpenAQ API] --> B[Airflow DAG]
+    B --> C[Extract + normalize]
+    C --> D[Validation layer]
+    D --> E[(Postgres warehouse)]
+    E --> F[Dashboard + analytics]
+```
+
+## Engineering decisions
+
+- Use Airflow as the orchestration layer so the pipeline can be rerun, monitored, and extended without custom scheduling logic.
+- Validate records before loading them to keep the warehouse clean and reduce bad-data propagation downstream.
+- Use a sensor-and-timestamp natural key for upserts so repeated DAG runs remain idempotent.
+- Keep the implementation intentionally small and modular, with clear boundaries between API access, validation, and persistence.
+- Favor Docker-based local setup for reproducibility and easier onboarding across environments.
+
 ## Key Features
 
 - API-driven ingestion from the OpenAQ service
